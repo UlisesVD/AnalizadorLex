@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package analizadorlexico;
 
 import java.io.BufferedWriter;
@@ -14,17 +9,26 @@ import java.util.Scanner;
 import java.util.StringTokenizer;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 
 public class View extends javax.swing.JFrame {
-
+    
+    //SIMBOLOS UTILIZADOS
     ArrayList<String> simbolo = new ArrayList(Arrays.asList("{", "}", "(", ")", ";", ",", "="));
+    //OPERACIONES POSIBLES
     ArrayList<String> op = new ArrayList(Arrays.asList("+", "-", "*", "/", "%"));
+    //CARACTERES NUMERICOS
     ArrayList<String> num = new ArrayList(Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"));
+    //PALABRAS RESERVADAS
     char begin[] = {'B', 'E', 'G', 'I', 'N'};
-    int cont = 0, column = 0, enter = 0;
+    char integer[] = {'I', 'N', 'T', 'E', 'G', 'E','R'};
+    char write[] = {'W', 'R', 'I', 'T', 'E'};
+    char read[] = {'R', 'E', 'A', 'D'};
+    char real[] = {'R', 'E', 'A', 'L'};
+    
+    int cont = 0, enter = 0;
+    
     DefaultListModel<String> errores = new DefaultListModel();
     DefaultTableModel modeloTabla = new DefaultTableModel() {
         @Override
@@ -161,11 +165,7 @@ public class View extends javax.swing.JFrame {
                 llenarTabla("tk_simbolo", aux);
                 //i++;
             }
-
-            if (aux.equals(" ")) {
-                //aux=String.valueOf(texto.charAt(i+1));
-                //System.out.println("entro y aux:"+aux);
-            }
+            
             if (op.contains(aux)) {
                 llenarTabla("tk_operacion", aux);
                 //i++;
@@ -240,12 +240,12 @@ public class View extends javax.swing.JFrame {
                                         }
                                     }
                                 }
-
-                                if (flag == true) {
+                                
+                                if (flag == true || simbolo.contains(aux) || op.contains(aux)) {
 
                                     llenarTabla("tk_variable", var);
                                     System.out.println("aux en i de inc" + aux);
-                                    if(texto.charAt(i)!='\n'){
+                                    if(texto.charAt(i)!='\n'&& !simbolo.contains(aux) && !op.contains(aux)){
                                         i++;
                                     }
                                     //i++;
