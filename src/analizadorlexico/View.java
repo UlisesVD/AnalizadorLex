@@ -3,32 +3,42 @@ package analizadorlexico;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 
 public class View extends javax.swing.JFrame {
-    
+
+    DefaultListModel<String> listModel = new DefaultListModel();
     //SIMBOLOS UTILIZADOS
     ArrayList<String> simbolo = new ArrayList(Arrays.asList("{", "}", "(", ")", ";", ",", "="));
     //OPERACIONES POSIBLES
     ArrayList<String> op = new ArrayList(Arrays.asList("+", "-", "*", "/", "%"));
+    //SIMBOLOS INVALIDOS
+    ArrayList<String> invalido = new ArrayList(Arrays.asList("°", "|", "¬", "!", "#", "$", "&", "'", "¿", "¡", "@", "´", "¨", "~", "[", "]", "^", ":", "_", "?"));
     //CARACTERES NUMERICOS
     ArrayList<String> num = new ArrayList(Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"));
+    //Variables analizadas 
+    ArrayList<String> variables = new ArrayList();
     //PALABRAS RESERVADAS
     char begin[] = {'B', 'E', 'G', 'I', 'N'};
-    char integer[] = {'I', 'N', 'T', 'E', 'G', 'E','R'};
+    char integer[] = {'I', 'N', 'T', 'E', 'G', 'E', 'R'};
     char write[] = {'W', 'R', 'I', 'T', 'E'};
     char read[] = {'R', 'E', 'A', 'D'};
     char real[] = {'R', 'E', 'A', 'L'};
-    
-    int cont = 0, enter = 0;
-    
+    char end[] = {'E', 'N', 'D'};
+
+    int cont = 0, enter = 1, i = 0, count = 0;
+
+    String aux = "";
+
     DefaultListModel<String> errores = new DefaultListModel();
     DefaultTableModel modeloTabla = new DefaultTableModel() {
         @Override
@@ -49,9 +59,10 @@ public class View extends javax.swing.JFrame {
     }
 
     public void eliminarColumns() {
-        int cantidad = modeloTabla.getColumnCount();
-        for (int i = 0; i < cantidad; i++) {
-            modeloTabla.removeRow(i);
+        int cantidad = modeloTabla.getRowCount();
+        System.out.println("cantidad " + cantidad);
+        for (int k = 0; k < 100; k++) {
+            modeloTabla.removeRow(0);
         }
     }
 
@@ -65,12 +76,14 @@ public class View extends javax.swing.JFrame {
         jButton1 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         areaTexto = new javax.swing.JTextArea();
+        lista = new javax.swing.JList<>();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane3 = new javax.swing.JScrollPane();
         jList1 = new javax.swing.JList<>();
         jButton2 = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
+        jButton3 = new javax.swing.JButton();
 
         jCheckBoxMenuItem1.setSelected(true);
         jCheckBoxMenuItem1.setText("jCheckBoxMenuItem1");
@@ -89,11 +102,22 @@ public class View extends javax.swing.JFrame {
         });
         jPanel1.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, -1));
 
+        jScrollPane1.addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentMoved(java.awt.event.ComponentEvent evt) {
+                jScrollPane1ComponentMoved(evt);
+            }
+        });
+
         areaTexto.setColumns(20);
         areaTexto.setRows(5);
+        areaTexto.setTabSize(4);
         jScrollPane1.setViewportView(areaTexto);
 
-        jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 378, 243));
+        jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 50, 400, 243));
+
+        lista.setFont(new java.awt.Font("Dialog", 0, 10)); // NOI18N
+        lista.setModel(listModel);
+        jPanel1.add(lista, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, 30, 240));
 
         jPanel2.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
 
@@ -108,17 +132,15 @@ public class View extends javax.swing.JFrame {
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 748, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(26, Short.MAX_VALUE))
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 782, Short.MAX_VALUE)
+                .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 7, Short.MAX_VALUE))
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 116, Short.MAX_VALUE)
         );
 
-        jPanel1.add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 320, 790, 120));
+        jPanel1.add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 320, 810, 120));
 
         jButton2.setText("Analizar");
         jButton2.addActionListener(new java.awt.event.ActionListener() {
@@ -131,7 +153,15 @@ public class View extends javax.swing.JFrame {
         jTable1.setModel(modeloTabla);
         jScrollPane2.setViewportView(jTable1);
 
-        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 50, 348, 243));
+        jPanel1.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(458, 50, 340, 243));
+
+        jButton3.setText("Guardar Tokens");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+        jPanel1.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 10, -1, -1));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -151,163 +181,290 @@ public class View extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         String texto = areaTexto.getText();
-        System.out.println(texto);
-        int i = 0;
         cont = 0;
+        i = 0;
+        enter = 1;
         eliminarColumns();
+        listModel.clear();
+        modeloTabla.setNumRows(100);
+        listModel.addElement("1");
+        variables.clear();
         errores.clear();
-        int count = texto.length();
+        count = texto.length();
+
         while (i < count && i >= 0) {
-            System.out.println("es i:" + i);
-            String aux = String.valueOf(texto.charAt(i));
-            System.out.println(aux + "debe tener *");
+            aux = String.valueOf(texto.charAt(i));
             if (simbolo.contains(aux) || aux.equals(".")) {
                 llenarTabla("tk_simbolo", aux);
-                //i++;
             }
-            
+
             if (op.contains(aux)) {
                 llenarTabla("tk_operacion", aux);
-                //i++;
             }
 
+            if (aux.equals("\n")) {
+                ++enter;
+                listModel.addElement(String.valueOf(enter));
+            }
+
+            if (invalido.contains(aux)) {
+                errores.addElement("Simbolo invalido en linea " + enter);
+            }
+
+            if (num.contains(aux)) {
+                boolean flag = true, decimal = false;
+                String numero = "";
+                int fin = 1;
+                String token = "tk_num_entero";
+                while (flag && i + 1 < texto.length() && fin < 2) {
+                    numero += aux;
+                    aux = String.valueOf(texto.charAt(++i));
+                    int d = i;
+                    if (aux.equals(".") && d + 1 < texto.length()) {
+                        decimal = true;
+                        int point = d + 2;
+                        System.out.println("texto"+texto.charAt(i));
+                        if (num.contains(String.valueOf(texto.charAt(i + 1)))) {
+                            while (d <= point && d + 1 < texto.length() && fin <= 2) {
+                                numero += aux;
+                                i++;
+                                aux = String.valueOf(texto.charAt(i));
+
+                                d++;
+                                if ((!num.contains(aux) && !aux.equals("."))) {
+                                    System.out.println("entra" + aux);
+                                    flag = false;
+
+                                    d = d + 2;
+                                    fin = 3;
+                                }
+
+                                fin++;
+                            }
+                        } else {
+                            flag = false;
+                        }
+
+                        if (num.contains(aux)) {
+                            numero += aux;
+                        } else {
+                            aux = String.valueOf(texto.charAt(--i));
+                        }
+                    } else {
+                        if (!num.contains(aux) && !aux.equals(" ")) {
+                            aux = String.valueOf(texto.charAt(--i));
+                            flag = false;
+                        }
+                    }
+                }
+
+                if (decimal) {
+                    if (i + 1 <= texto.length() || flag == true && !".".equals(String.valueOf(texto.charAt(i + 1))) && !Character.isAlphabetic(texto.charAt(i + 1)) && !num.contains(String.valueOf(texto.charAt(i + 1)))) {
+                        llenarTabla("tk_real", numero);
+                    } else {
+                        errores.addElement("Error al escribir el numero " + numero + " en la linea " + enter);
+                        while ((i + 1 < texto.length()) && (Character.isAlphabetic(texto.charAt(i++)) || num.contains(String.valueOf(aux.charAt(0))) || ".".equals(String.valueOf(texto.charAt(i + 1))))) {
+                            aux = String.valueOf(texto.charAt(i));
+                        }
+                        if (i + 1 < texto.length()) {
+                            aux = String.valueOf(texto.charAt(i - 1));
+                            i--;
+                        } else {
+                            i++;
+                        }
+                    }
+                } else {
+
+                    if (flag == true || (!Character.isAlphabetic(texto.charAt(i + 1)) || aux.equals(" "))) {
+                        if (flag) {
+                            llenarTabla(token, numero + aux);
+                        } else {
+                            llenarTabla(token, numero);
+                        }
+
+                    } else {
+                        errores.addElement("Error al escribir el numero " + numero + " en la linea " + enter);
+                        while ((i + 1 < texto.length()) && (Character.isAlphabetic(texto.charAt(i++)) || num.contains(String.valueOf(aux.charAt(0))) || ".".equals(String.valueOf(texto.charAt(i + 1))))) {
+                            aux = String.valueOf(texto.charAt(i));
+                        }
+
+                        if (i + 1 < texto.length()) {
+                            aux = String.valueOf(texto.charAt(i - 1));
+                            i--;
+                        } else {
+                            aux = String.valueOf(texto.charAt(i));
+                            i++;
+                        }
+                    }
+                }
+
+            }
             if (aux.equals(aux.toUpperCase()) && Character.isAlphabetic(aux.charAt(0)) && !" ".equals(aux)) {
                 while (!op.contains(aux) && !simbolo.contains(aux) && i < count && !" ".equals(aux)) {
-                    System.out.println("aux: " + aux + " " + i);
                     switch (aux) {
                         case "B":
-                            if ((i + 5 <= texto.length()) && (Character.isAlphabetic(texto.charAt(i + 1)))) {
-                                System.out.println(texto.charAt(i + 1)+"  esta nel ");
-                                //Calculo de las constantes 
-                                System.out.println("entro a ifffff");
-                                boolean flag = true;
-                                int j = 1;
-                                //Validacion de escritura
-                                while (j < begin.length) {
-                                    if (texto.charAt(++i) != begin[j]) {
-                                        flag = false;
-                                        j = 6;
-                                    }
-                                    aux = String.valueOf(texto.charAt(i));
-                                    j++;
-                                }
-                                //Identificacion de errores
-                                if (i + 1 < texto.length()) {
-                                    //System.out.println("primer if");
-                                    if (flag == true && (texto.charAt(i + 1) == ' ' || simbolo.contains(String.valueOf(texto.charAt(i + 1))) || texto.charAt(i + 1) == '\n')) {
-                                        llenarTabla("tk_reservado", "BEGIN");
-                                        aux = String.valueOf(texto.charAt(++i));
-                                    } else {
-                                        System.out.println("errrooor " + enter);
-                                        errores.addElement("Error al intentar escribir BEGIN");
-
-                                        while ((i + 1 < texto.length()) && (Character.isAlphabetic(texto.charAt(i++)) || num.contains(String.valueOf(aux.charAt(0))))) {
-                                            aux = String.valueOf(texto.charAt(i));
-
-                                        }
-                                        if (i + 1 < texto.length()) {
-                                            aux = String.valueOf(texto.charAt(i - 1));
-                                            i--;
-                                        } else {
-                                            i++;
-                                        }
-                                    }
-                                } else {
-                                    llenarTabla("tk_reservado", "BEGIN");
-                                    i++;
-                                }
-
+                            checkTokens(texto, begin, "tk_reservado", "BEGIN", "Error al intentar escribir BEGIN en linea ");
+                            break;
+                        case "E":
+                            checkTokens(texto, end, "tk_reservado", "END", "Error al intentar escribir END en linea ");
+                            break;
+                        case "I":
+                            checkTokens(texto, integer, "tk_reservado", "INTEGER", "Error al intentar escribir INTEGER en linea ");
+                            break;
+                        case "R":
+                            if (texto.charAt(i + 3) == 'L') {
+                                checkTokens(texto, real, "tk_reservado", "REAL", "Error al intentar escribir REAL en linea ");
                             } else {
-                                //Identificacion de variables
-                                boolean flag = true;
-                                int j = 0;
-                                String var = "";
-                                while (!op.contains(aux) && !simbolo.contains(aux) && j <= 3) {
-                                    var += aux;
-                                    System.out.println("aux 1" + aux);
-                                    j++;
-                                    if (i >= count - 1) {
-                                        j = 5;
-                                    } else {
-                                        aux = String.valueOf(texto.charAt(++i));
-                                    }
-                                    if (" ".equals(aux) || "\n".equals(aux)) {
-                                        j = 5;
-                                    } else {
-                                        if (!num.contains(aux) && j <= 4) {
-                                            flag = false;
-                                            j = 5;
-                                        }
-                                    }
-                                }
-                                
-                                if (flag == true || simbolo.contains(aux) || op.contains(aux)) {
-
-                                    llenarTabla("tk_variable", var);
-                                    System.out.println("aux en i de inc" + aux);
-                                    if(texto.charAt(i)!='\n'&& !simbolo.contains(aux) && !op.contains(aux)){
-                                        i++;
-                                    }
-                                    //i++;
-
-                                } else {
-                                    System.out.println("errrooror " + enter);
-                                    errores.addElement("Error al intentar escribir Variable con B***");
-                                    while ((i + 1 < texto.length()) && (Character.isAlphabetic(texto.charAt(i++)) || num.contains(String.valueOf(aux.charAt(0))))) {
-                                            aux = String.valueOf(texto.charAt(i));
-
-                                    }
-                                    if (i + 1 < texto.length()) {
-                                            aux = String.valueOf(texto.charAt(i - 1));
-                                            i--;
-                                        } else {
-                                            i++;
-                                        }
-                                    //i++;
-                                }
-                                System.out.println("fin i " + i);
+                                checkTokens(texto, read, "tk_reservado", "READ", "Error al intentar escribir READ en linea ");
                             }
                             break;
-
-                        case "E":
-
-                            break;
-
-                        case "I":
-
-                            break;
-
-                        case "R":
-
+                        case "W":
+                            checkTokens(texto, write, "tk_reservado", "WRITE", "Error al intentar escribir WRITE en linea ");
                             break;
                         case " ":
-
                             if (i + 1 <= texto.length()) {
                                 aux = String.valueOf(texto.charAt(i + 1));
                                 i++;
-                                System.out.println("entro a space");
                             }
                             break;
                         case "\n":
-                            if (i + 1 <= texto.length()) {
-                                aux = String.valueOf(texto.charAt(i+1));
+
+                            if (i + 2 <= texto.length()) {
+                                //System.out.println("I= " + (i + 1) + " T= " + texto.length() + " AUX " + aux);
+                                aux = String.valueOf(texto.charAt(i + 1));
                                 i++;
                                 ++enter;
-                                System.out.println("entro a space " + aux + "  i " + i);
+                                listModel.addElement(String.valueOf(enter));
+                            } else {
+                                i++;
                             }
                             break;
-                    }
 
+                        default:
+                            checarVariables(texto);
+                            break;
+                    }
+                }
+                i--;
+            }
+
+            if (aux.equals(aux.toLowerCase()) && !aux.equals(" ") && !aux.equals("\n") && Character.isAlphabetic(aux.charAt(0))) {
+
+                //while (!op.contains(aux) && !simbolo.contains(aux) && i < count && !" ".equals(aux) && !aux.equals("\n") && i < texto.length()) {
+                checarVariables(texto);
+
+                //}
+                if (simbolo.contains(aux) || op.contains(aux) || aux.equals("\n") || aux.equals(" ")) {
+                    if (aux.equals("\n")) {
+                        enter++;
+                        listModel.addElement(String.valueOf(enter));
+                    }
+                    i--;
                 }
 
-                i--;
-                //System.out.println("aux: "+aux);
-                //System.out.println(i+"---");
             }
+
             i++;
-            //System.out.println(i+"BEGUN { { }");
         }
     }//GEN-LAST:event_jButton2ActionPerformed
+    public void checarVariables(String texto) {
+        //Identificacion de variables
+        boolean flag = true;
+        int j = 0;
+        String var = "";
+
+        if (texto.length() > i + 1 && num.contains(String.valueOf(texto.charAt(i + 1)))) {
+            while (!op.contains(aux) && !simbolo.contains(aux) && j <= 3) {
+                var += aux;
+                j++;
+                if (i >= count - 1) {
+                    j = 5;
+                } else {
+                    aux = String.valueOf(texto.charAt(++i));
+                }
+                if (" ".equals(aux) || "\n".equals(aux)) {
+                    //aux = String.valueOf(texto.charAt(--i));
+                    j = 5;
+                } else {
+                    if (!num.contains(aux) && j <= 3) {
+                        flag = false;
+                        //aux = String.valueOf(texto.charAt(--i));
+                        j = 5;
+                    }
+                }
+            }
+        }
+        if (j == 4 || Character.isAlphabetic(aux.charAt(0))) {
+            flag = false;
+        }
+
+        if (var.length() > 1 && (flag == true || simbolo.contains(aux) || op.contains(aux) || !num.contains(aux))) {
+            if (!variables.contains(var)) {
+                variables.add(var);
+                llenarTabla("tk_variable", var);
+            }
+            if (texto.charAt(i) != '\n' && !simbolo.contains(aux) && !op.contains(aux)) {
+                i++;
+            }
+        } else {
+            errores.addElement("Error al intentar escribir Variable " + var + " en Linea " + enter);
+            while ((i + 1 < texto.length()) && (Character.isAlphabetic(texto.charAt(i++)) || num.contains(String.valueOf(aux.charAt(0))) || ".".equals(String.valueOf(texto.charAt(i + 1))))) {
+                aux = String.valueOf(texto.charAt(i));
+            }
+            if (i + 1 < texto.length()) {
+                aux = String.valueOf(texto.charAt(i - 1));
+                i--;
+            } else {
+                i++;
+            }
+
+        }
+    }
+
+    public void checkTokens(String texto, char aray[], String token, String lexema, String error) {
+        if ((i + aray.length <= texto.length()) && (Character.isAlphabetic(texto.charAt(i + 1)))) {
+            //Calculo de las constantes 
+            boolean flag = true;
+            int j = 1;
+            //Validacion de escritura
+            while (j < aray.length) {
+
+                if (texto.charAt(++i) != aray[j]) {
+                    flag = false;
+                    j = aray.length;
+                }
+
+                aux = String.valueOf(texto.charAt(i));
+                j++;
+            }
+            //Identificacion de errores
+            if (i + 1 < texto.length()) {
+
+                if (flag == true && (texto.charAt(i + 1) == ' ' || simbolo.contains(String.valueOf(texto.charAt(i + 1))) || texto.charAt(i + 1) == '\n')) {
+                    llenarTabla(token, lexema);
+                    aux = String.valueOf(texto.charAt(++i));
+                } else {
+                    errores.addElement(error + enter);
+                    while ((i + 1 < texto.length()) && (Character.isAlphabetic(texto.charAt(i++)) || num.contains(String.valueOf(aux.charAt(0))) || ".".equals(String.valueOf(texto.charAt(i + 1))))) {
+                        aux = String.valueOf(texto.charAt(i));
+                    }
+                    if (i + 1 < texto.length()) {
+                        aux = String.valueOf(texto.charAt(i - 1));
+                        i--;
+                    } else {
+                        i++;
+                    }
+                }
+            } else {
+                llenarTabla(token, lexema);
+                i++;
+            }
+
+        } else {
+            checarVariables(texto);
+        }
+    }
+
     private void llenarTabla(String token, String lexema) {
         modeloTabla.setValueAt(token, cont, 0);
         modeloTabla.setValueAt(lexema, cont, 1);
@@ -328,17 +485,18 @@ public class View extends javax.swing.JFrame {
                 // Leemos el contenido del fichero
 
                 s = new Scanner(fichero);
-//creacion del fichero de tokens
+                //creacion del fichero de tokens
                 File archivo = new File("C:/Users/uli_v/Documents/tokens.txt");
                 BufferedWriter bw;
                 bw = new BufferedWriter(new FileWriter(archivo));
                 // Leemos linea a linea el fichero
+                areaTexto.setText("");
                 while (s.hasNextLine()) {
                     String linea = s.nextLine(); 	// Guardamos la linea en un String
-
                     //obteniendo los tokens
                     if (!linea.isEmpty()) {
                         StringTokenizer st = new StringTokenizer(linea);
+                        
                         while (st.hasMoreElements()) {
                             String tokenActual = st.nextToken();
 
@@ -349,8 +507,8 @@ public class View extends javax.swing.JFrame {
                                     bw.write("Token_inicio-BEGIN");
                                 }
                             }
-
                         }
+                        
                         areaTexto.setText(areaTexto.getText() + linea + "\n");
                     }
                     bw.close();
@@ -370,6 +528,35 @@ public class View extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        String ruta = "src/tokens/tokens.txt";
+        File archivo = new File(ruta);
+        BufferedWriter bw;
+
+        try {
+            bw = new BufferedWriter(new FileWriter(archivo));
+            bw.write("Token             |  Lexema  \n");
+            for (int j = 0; j < 100; j++) {
+                if (modeloTabla.getValueAt(j, 0) != null) {
+                    bw.write(modeloTabla.getValueAt(j, 0) + "         ");
+                    bw.write(modeloTabla.getValueAt(j, 1) + "\n");
+                } else {
+                    break;
+                }
+            }
+            bw.close();
+            JOptionPane.showMessageDialog(this, "Archivo guardado en ruta src/tokens", "Successful", JOptionPane.OK_OPTION);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+
+    }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jScrollPane1ComponentMoved(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_jScrollPane1ComponentMoved
+        System.out.println("hey");
+    }//GEN-LAST:event_jScrollPane1ComponentMoved
 
     /**
      * @param args the command line arguments
@@ -415,6 +602,7 @@ public class View extends javax.swing.JFrame {
     private javax.swing.JTextArea areaTexto;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
     private javax.swing.JList<String> jList1;
     private javax.swing.JMenuItem jMenuItem1;
@@ -424,5 +612,6 @@ public class View extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable jTable1;
+    private javax.swing.JList<String> lista;
     // End of variables declaration//GEN-END:variables
 }
